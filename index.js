@@ -5,76 +5,92 @@ var pickSpherePoint = require('pick-point-on-sphere');
 var rayIntersectTriangle = require('ray-triangle-intersection');
 var manifoldPatches = require('manifold-patches');
 
-module.exports = function(cells, positions, numberOfRays=100) {
-  var flippedCount = 0;
-  consistentOrientation(cells);
+module.exports = function(cells, positions) {
+  var flippedCount = consistentOrientation(cells);
   manifoldPatches(cells).map(function(patch, i) {
     var arbitraryCell = patch[0];
     var vertices = [
-      positions[arbitraryCell[0]],
-      positions[arbitraryCell[1]],
-      positions[arbitraryCell[2]]
+      Array.from(positions[arbitraryCell[0]]),
+      Array.from(positions[arbitraryCell[1]]),
+      Array.from(positions[arbitraryCell[2]])
     ];
+    var cellSet = new Set([arbitraryCell[0], arbitraryCell[1], arbitraryCell[2]]);
 
     var cFront = 0;
     var cBack = 0;
     var dFront = 0;
     var dBack = 0;
-    var pFront = 0;
-    var pBack = 0;
 
-    var scratch = [0, 0, 0];
-    var edgeA = vec3.subtract(scratch, vertices[1], vertices[0]);
-    var edgeB = vec3.subtract(scratch, vertices[2], vertices[0]);
-    var normal = vec3.cross(scratch, edgeA, edgeB);
+    var edgeA = [];
+    var edgeB = [];
+    var normal = [];
+    vec3.subtract(edgeA, vertices[1], vertices[0]);
+    vec3.subtract(edgeB, vertices[2], vertices[0]);
+    vec3.cross(normal, edgeA, edgeB);
     var facesFront = function(direction) {
       return vec3.dot(normal, direction) > 0;
     }
 
-    var point = pickPoint(vertices);
-    pickSpherePoint(numberOfRays).map(function(direction) {
-      var facingForward = facesFront(direction);
-      var minDistance = 0;
-      var triangleIntersected = false;
-      cells.map(function(cell) {
-        var triangle = [
-          positions[cell[0]],
-          positions[cell[1]],
-          positions[cell[2]]
-        ];
-        var distance = rayIntersectTriangle(scratch, point, direction, triangle);
-        if (distance) {
-          triangleIntersected = true;
+    var area = vec3.length(normal);
+    // TODO: lookup the factor from libigl
+    var numberOfRays = (area * 10) + 10;
 
-          if (distance < minDistance) {
-            minDistance = distance;
+    for (var i = 0; i < numberOfRays; i++) {
+      var point = pickPoint(vertices);
+      // shoot rays in forwards and backwards directions
+      var directions = [];
+      pickSpherePoint(1).map(function(direction) {
+        directions.push(direction);
+        directions.push(vec3.scale([], direction, -1));
+      });
+      directions.map(function(direction) {
+        var facingForward = facesFront(direction);
+        var minDistance = null;
+        var triangleIntersected = false;
+        cells.map(function(cell) {
+          if (cellSet.has(cell[0]) &&
+              cellSet.has(cell[1]) &&
+              cellSet.has(cell[2])) {
+            // rule out self-intersections
+            return;
           }
 
+          var triangle = [
+            positions[cell[0]],
+            positions[cell[1]],
+            positions[cell[2]]
+          ];
+          var distance = rayIntersectTriangle([], point, direction, triangle);
+          if (distance && distance > 0) {
+            triangleIntersected = true;
+
+            if (minDistance) {
+              if (distance < minDistance) {
+                minDistance = distance;
+              }
+            } else {
+              minDistance = distance;
+            }
+          }
+        });
+
+        if (triangleIntersected) {
           if (facingForward) {
-            pFront++;
+            dFront += minDistance;
           } else {
-            pBack++;
+            dBack += minDistance;
+          }
+        } else {
+          if (facingForward) {
+            cFront++;
+          } else {
+            cBack++;
           }
         }
       });
+    }
 
-      if (triangleIntersected) {
-        if (facingForward) {
-          cFront++;
-          dFront += minDistance;
-        } else {
-          cBack++;
-          dBack += minDistance;
-        }
-      }
-    });
-
-    pFront = pFront % 2;
-    pBack = pBack % 2;
-
-    // if ((pFront < pBack) || ((pFront == pBack) && (dFront < dBack))) {
-    // if ((cFront < cBack) || ((cFront == cBack) && (dFront < dBack))) {
-    if (cFront < cBack) {
+    if ((cFront < cBack) || ((cFront == cBack) && (dFront < dBack))) {
       // flip orientation for each cell in the patch
       patch.map(function(cell) {
         var i1 = cell[0];

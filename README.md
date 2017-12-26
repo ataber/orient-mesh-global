@@ -13,7 +13,7 @@ var orient         = require('orient-mesh-global')
 var flippedCount   = orient(bunny.cells, bunny.positions);
 ```
 
-`require("orient-mesh-global")(cells, positions, numberOfRays = 100)`
+`require("orient-mesh-global")(cells, positions)`
 ----------------------------------------------------
 Modifies `cells` in-place. Splits the complex into components defined by manifold connectivity (i.e. two cells are neighbors iff they share a manifold edge), and for each component attempts to orient cells using heuristics that are designed for meshes that imply solid domains.
 

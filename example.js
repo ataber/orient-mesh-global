@@ -4,9 +4,10 @@ var simplify = require('mesh-simplify')
 var orient = require('./index');
 var normals = require('normals');
 
-var simplified = simplify(bunny.cells, bunny.positions)(300)
-var cells = simplified.cells
-var positions = simplified.positions
+// to go slightly faster
+bunny = simplify(bunny.cells, bunny.positions)(1000)
+var cells = bunny.cells
+var positions = bunny.positions
 // Make mesh triangle soup to test global checking
 var duplicatedPositions = []
 var duplicatedCells = []
@@ -22,21 +23,19 @@ cells = duplicatedCells
 positions = duplicatedPositions
 
 var flipCount = 0;
-var i = 39
-cells[i] = [cells[i][1], cells[i][0], cells[i][2]];
-// var cells = cells.map(function(cell, cellIndex) {
-//   if (Math.random() >= 0.5) {
-//     // flip orientation
-//     flipCount++;
-//     return [cell[1], cell[0], cell[2]];
-//   } else {
-//     return cell;
-//   }
-// });
+var cells = cells.map(function(cell, cellIndex) {
+  if (Math.random() >= 0.5) {
+    // flip orientation
+    flipCount++;
+    return [cell[1], cell[0], cell[2]];
+  } else {
+    return cell;
+  }
+});
 
 console.log('flipped', flipCount, 'cells');
 console.time('orient');
-console.log('reflipped', orient(cells, positions, 20));
+console.log('reflipped', orient(cells, positions, 100));
 console.timeEnd('orient');
 
 var regl = require('regl')()
