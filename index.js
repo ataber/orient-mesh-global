@@ -1,11 +1,16 @@
 var vec3 = require('gl-vec3');
+var mass = require('mesh-mass');
 var consistentOrientation = require('consistently-orient');
 var pickPoint = require('pick-point-in-triangle');
 var pickSpherePoint = require('pick-point-on-sphere');
 var rayIntersectTriangle = require('ray-triangle-intersection');
 var manifoldPatches = require('manifold-patches');
 
-module.exports = function(cells, positions) {
+module.exports = function(cells, positions, totalRays = null, minimumRays = null) {
+  var minimumRays = minimumRays || 10;
+  var totalRays = totalRays || cells.length * 50;
+  var totalArea = mass(cells, positions).area;
+
   var flippedCount = consistentOrientation(cells);
   manifoldPatches(cells).map(function(patch, i) {
     var arbitraryCell = patch[0];
@@ -32,8 +37,8 @@ module.exports = function(cells, positions) {
     }
 
     var area = vec3.length(normal);
-    // TODO: lookup the factor from libigl
-    var numberOfRays = (area * 10) + 10;
+    // https://github.com/libigl/libigl/blob/5fd9c428cf9e34931213658d66de87300b59c2a0/include/igl/embree/reorient_facets_raycast.cpp#L80
+    var numberOfRays = parseInt(Math.max(minimumRays, totalRays * area / totalArea));
 
     for (var i = 0; i < numberOfRays; i++) {
       var point = pickPoint(vertices);

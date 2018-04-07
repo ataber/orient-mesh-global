@@ -13,9 +13,11 @@ var orient         = require('orient-mesh-global')
 var flippedCount   = orient(bunny.cells, bunny.positions);
 ```
 
-`require("orient-mesh-global")(cells, positions)`
+`require("orient-mesh-global")(cells, positions, totalRays = null, minimumRays = null)`
 ----------------------------------------------------
 Modifies `cells` in-place. Splits the complex into components defined by manifold connectivity (i.e. two cells are neighbors iff they share a manifold edge), and for each component attempts to orient cells using heuristics that are designed for meshes that imply solid domains.
+
+`totalRays` is an estimate for the desired maximum number of rays to use, while `minimumRays` is the minimum number of rays to shoot for each facet. If neither are provided, sane defaults are chosen.
 
 In the case of non-orientability (determined by reaching a contradiction while propagating orientation), raises an error.
 

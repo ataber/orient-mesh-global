@@ -1,6 +1,6 @@
 {
   "name": "orient-mesh-global",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Globally orient mesh using raytracing heuristics",
   "main": "index.js",
   "scripts": {
@@ -30,6 +30,7 @@
     "consistently-orient": "^1.0.3",
     "gl-vec3": "^1.0.3",
     "manifold-patches": "^1.0.0",
+    "mesh-mass": "^1.0.0",
     "pick-point-in-triangle": "^1.0.1",
     "pick-point-on-sphere": "^1.0.0",
     "ray-triangle-intersection": "github:ataber/ray-triangle-intersection"

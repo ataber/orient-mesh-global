@@ -35,7 +35,7 @@ var cells = cells.map(function(cell, cellIndex) {
 
 console.log('flipped', flipCount, 'cells');
 console.time('orient');
-console.log('reflipped', orient(cells, positions, 100));
+console.log('reflipped', orient(cells, positions, cells.length * 2, 3));
 console.timeEnd('orient');
 
 var regl = require('regl')()
